@@ -7170,8 +7170,8 @@
       "name": "lakshmi",
       "phone": "8985761088",
       "email": "",
-      "pts": 15,
-      "ltv": "₹25,400",
+      "pts": 25,
+      "ltv": "₹27,329",
       "av": "av-t"
     },
     {
@@ -9761,7 +9761,7 @@
       "date": "2026-06-06",
       "time": "12:00",
       "total": 900,
-      "status": "upcoming",
+      "status": "Rescheduled",
       "notes": "",
       "source": "walk-in",
       "location": "",
@@ -9786,6 +9786,46 @@
       "location": "",
       "deposit": false,
       "createdAt": "2026-06-05T11:00:56.005Z"
+    },
+    {
+      "id": "GS-73995",
+      "clientId": "c797",
+      "clientName": "lakshmi",
+      "services": [
+        "svc-1778241632139",
+        "svc-1778241632169"
+      ],
+      "staffId": "st1",
+      "date": "2026-06-07",
+      "time": "14:30",
+      "total": 900,
+      "status": "Rescheduled",
+      "notes": "",
+      "source": "walk-in",
+      "location": "",
+      "deposit": false,
+      "createdAt": "2026-06-05T15:45:57.226Z"
+    },
+    {
+      "id": "GS-22004",
+      "clientId": "c797",
+      "clientName": "lakshmi",
+      "services": [
+        "svc-1778241632139",
+        "svc-1778241632169",
+        "svc-1778241632095",
+        "svc-1778241632096"
+      ],
+      "staffId": "st3",
+      "date": "2026-06-17",
+      "time": "12:30",
+      "total": 1029,
+      "status": "upcoming",
+      "notes": "",
+      "source": "walk-in",
+      "location": "",
+      "deposit": false,
+      "createdAt": "2026-06-05T15:48:28.126Z"
     }
   ],
   "events": [
@@ -10428,6 +10468,31 @@
           "status": "failed",
           "error": "WhatsApp client connection timed out. Please scan the QR code and try again.",
           "timestamp": "2026-05-26T08:12:01.817Z"
+        }
+      ]
+    },
+    {
+      "id": "cmp-1780675186065",
+      "name": "zdfghjk",
+      "message": "cjhbc jv kjb kjb",
+      "mediaUrls": [],
+      "recipientsCount": 2,
+      "status": "completed",
+      "timestamp": "2026-06-05T15:59:46.066Z",
+      "results": [
+        {
+          "name": "balaji",
+          "phone": "916300188680",
+          "status": "sent",
+          "error": null,
+          "timestamp": "2026-06-05T15:59:48.262Z"
+        },
+        {
+          "name": "babli",
+          "phone": "918309578708",
+          "status": "sent",
+          "error": null,
+          "timestamp": "2026-06-05T15:59:52.587Z"
         }
       ]
     }
