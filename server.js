@@ -23,6 +23,11 @@ app.use((req, res, next) => {
     next();
 });
 
+// Serve the main HTML file when someone visits the root URL (/)
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'MedhikaArts_complete_module.html'));
+});
+
 // New removal route
 app.post('/api/bookings/remove/:id', async (req, res) => {
     const id = req.params.id;
