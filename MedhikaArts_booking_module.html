@@ -191,6 +191,13 @@ border-color: var(--color-primary);
 box-shadow: 0 0 0 4px rgba(26, 107, 138, 0.1);
 }
 
+.error {
+color: var(--color-danger);
+font-size: 12px;
+font-weight: 500;
+margin-top: 6px;
+}
+
 /* Service Grid Selection */
 .svc-grid {
 display: grid;
@@ -952,8 +959,7 @@ align-items: center;
     }
   }
 
-  const AI_BEST = '10:00';
-  const TIMES = ['09:00', '09:30', '10:00', '10:30', '11:00', '11:30', '12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00', '17:30'];
+  const TIMES = ['09:00', '09:30', '10:00', '10:30', '11:00', '11:30', '12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00', '17:30', '18:00', '18:30', '19:00', '19:30', '20:00', '20:30', '21:00'];
 
   let state = {
     step: 1,
@@ -961,12 +967,14 @@ align-items: center;
     client: null,
     clientQuery: '',
     clientPhone: '',
+    clientDob: '',
+    clientAnniversary: '',
     clientLocation: '',
     serviceQuery: '',
     showSuggestions: false,
     selectedServices: [],
     selectedStaff: null,
-    selectedDate: null,
+    selectedDate: new Date(new Date().setHours(0, 0, 0, 0)),
     selectedTime: null,
     notes: '',
     deposit: false,
@@ -1166,6 +1174,15 @@ Give ONE short, specific, actionable insight (2-3 sentences max) about this book
       state.bookingId = genId();
 
       let client = state.client ? CLIENTS.find(c => c.id === state.client) : null;
+      
+      if (!client && state.clientPhone) {
+        const existingByPhone = CLIENTS.find(c => c.phone && c.phone === state.clientPhone);
+        if (existingByPhone) {
+          client = existingByPhone;
+          state.client = client.id;
+        }
+      }
+
       let isNewClient = false;
       if (!client) {
         isNewClient = true;
@@ -1178,7 +1195,10 @@ Give ONE short, specific, actionable insight (2-3 sentences max) about this book
           pts: 0,
           ltv: rupee(totalPrice()),
           joinedDate: state.selectedDate, // Set to booking date as requested
-          av: 'av-' + ['t', 'b', 'p', 'c', 'k'][Math.floor(Math.random() * 5)]
+          av: 'av-' + ['t', 'b', 'p', 'c', 'k'][Math.floor(Math.random() * 5)],
+          gender: state.selectedGender,
+          dob: state.clientDob,
+          anniversary: state.clientAnniversary
         };
         CLIENTS.push(client);
         state.client = client.id;
@@ -1187,6 +1207,9 @@ Give ONE short, specific, actionable insight (2-3 sentences max) about this book
         const ltvNum = parseInt(ltvStr.replace(/[^0-9]/g, '')) || 0;
         client.ltv = rupee(ltvNum + totalPrice());
         client.pts = (client.pts || 0) + 5; // Flat 5 points for returning client as requested
+        client.gender = state.selectedGender;
+        if (state.clientDob) client.dob = state.clientDob;
+        if (state.clientAnniversary) client.anniversary = state.clientAnniversary;
       }
 
       const newBooking = {
@@ -1202,6 +1225,7 @@ Give ONE short, specific, actionable insight (2-3 sentences max) about this book
         notes: state.notes,
         source: state.source,
         location: state.clientLocation,
+        serviceLocation: state.serviceLocation || 'indoor',
         deposit: state.deposit,
         createdAt: new Date().toISOString()
       };
@@ -1316,7 +1340,8 @@ Give ONE short, specific, actionable insight (2-3 sentences max) about this book
       servicePriceSelections: {},
       clientPhone: '',
       serviceQuery: '',
-      selectedGender: 'female'
+      selectedGender: 'female',
+      serviceLocation: 'indoor'
     };
     render();
   }
@@ -1413,6 +1438,9 @@ Give ONE short, specific, actionable insight (2-3 sentences max) about this book
         <div style="flex: 1;">
           <div style="font-weight: 700; font-size: 13px; color: #1a202c;">${b.clientName}</div>
           <div style="font-size: 11px; color: #718096; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px;">${svcs}</div>
+          <div style="font-size: 10px; font-weight: 600; margin-top: 2px; color: ${b.serviceLocation === 'outdoor' ? '#f59e0b' : '#3b82f6'};">
+            ${b.serviceLocation === 'outdoor' ? '🏡 Outdoor' : '🏢 In-Office'}
+          </div>
         </div>
         <div>
           ${statusPill(b.time)}
@@ -1479,35 +1507,54 @@ Give ONE short, specific, actionable insight (2-3 sentences max) about this book
     <div><div class="cs-name">${selected.name}</div><div class="cs-sub">${selected.phone} · ${selected.pts} pts · LTV ${selected.ltv}</div></div>
     <button onclick="window._clearClient()" style="margin-left:auto;font-size:12px;color:var(--color-text-secondary);background:none;border:none;cursor:pointer">✕</button>
   </div>`: ''}
-  <div class="field">
-    <label>Search existing client or enter new name</label>
-    <input type="text" id="clientSearch" value="${state.clientQuery}" placeholder="Name, phone number..." autocomplete="off">
-    ${state.errors.client ? `<div class="error">${state.errors.client}</div>` : ''}
-  </div>
-  <div class="field">
-    <label>Client gender (determines service menu)</label>
-    <div style="background:var(--color-background-secondary); padding:4px; border-radius:10px; display:flex; gap:4px; width: fit-content;">
-      <button class="btn-gender ${state.selectedGender === 'female' ? 'active' : ''}" onclick="window._setGender('female')">Female</button>
-      <button class="btn-gender ${state.selectedGender === 'male' ? 'active' : ''}" onclick="window._setGender('male')">Male</button>
-    </div>
-  </div>
   ${!selected ? `
   <div class="field">
     <label>Phone number (for WhatsApp invoice)</label>
     <input type="tel" id="clientPhoneInput" value="${state.clientPhone}" placeholder="+91 00000 00000">
     ${state.errors.phone ? `<div class="error">${state.errors.phone}</div>` : ''}
-  </div>
-  <div class="field">
-    <label>Location / Address</label>
-    <input type="text" id="clientLocationInput" value="${state.clientLocation}" placeholder="Locality, Landmark, or Address">
   </div>` : ''}
+  <div class="field">
+    <label>Search existing client or enter new name</label>
+    <input type="text" id="clientSearch" value="${state.clientQuery}" placeholder="Name, phone number..." autocomplete="off">
+    ${state.errors.client ? `<div class="error">${state.errors.client}</div>` : ''}
+  </div>
   ${matches.length > 0 && !selected ? `<div class="client-suggestion">${matches.map(c => `
     <div class="cs-item" data-cid="${c.id}">
       <div class="av ${c.av}">${c.name.split(' ').map(x => x[0]).join('')}</div>
       <div><div class="cs-name">${c.name}</div><div class="cs-sub">${c.phone} · ${c.pts.toLocaleString()} pts · LTV ${c.ltv}</div></div>
       <span class="badge badge-blue">Returning</span>
     </div>`).join('')}</div>` : ''}
-  ${!selected && !q ? `<div style="font-size:12px;color:var(--color-text-secondary);margin-top:6px">Or quick-pick: ${CLIENTS.slice(0, 3).map(c => `<span data-cid="${c.id}" style="color:#1A6B8A;cursor:pointer;margin-right:8px">${c.name}</span>`).join('')}</div>` : ''}
+  ${!selected && !q ? `<div style="font-size:12px;color:var(--color-text-secondary);margin-top:-10px;margin-bottom:16px">Or quick-pick: ${CLIENTS.slice(0, 3).map(c => `<span data-cid="${c.id}" style="color:#1A6B8A;cursor:pointer;margin-right:8px">${c.name}</span>`).join('')}</div>` : ''}
+  ${(!selected || !selected.gender) ? `
+  <div class="field">
+    <label>Client gender (determines service menu)</label>
+    <div style="background:var(--color-background-secondary); padding:4px; border-radius:10px; display:flex; gap:4px; width: fit-content;">
+      <button class="btn-gender ${state.selectedGender === 'female' ? 'active' : ''}" onclick="window._setGender('female')">Female</button>
+      <button class="btn-gender ${state.selectedGender === 'male' ? 'active' : ''}" onclick="window._setGender('male')">Male</button>
+    </div>
+  </div>` : ''}
+  <div style="display:flex; gap:16px; margin-bottom:14px;">
+    <div class="field" style="flex:1; margin-bottom:0;">
+      <label>Date of Birth</label>
+      <input type="date" id="clientDobInput" value="${state.clientDob}">
+    </div>
+    <div class="field" style="flex:1; margin-bottom:0;">
+      <label>Anniversary</label>
+      <input type="date" id="clientAnniversaryInput" value="${state.clientAnniversary}">
+    </div>
+  </div>
+  <div class="field">
+    <label>Service Location</label>
+    <div style="background:var(--color-background-secondary); padding:4px; border-radius:10px; display:flex; gap:4px; width: fit-content;">
+      <button class="btn-gender ${state.serviceLocation === 'indoor' ? 'active' : ''}" onclick="window._setServiceLocation('indoor')">🏢 In-Office</button>
+      <button class="btn-gender ${state.serviceLocation === 'outdoor' ? 'active' : ''}" onclick="window._setServiceLocation('outdoor')">🏡 Outdoor</button>
+    </div>
+  </div>
+  ${(state.serviceLocation === 'outdoor') ? `
+  <div class="field">
+    <label>Location / Address</label>
+    <input type="text" id="clientLocationInput" value="${state.clientLocation}" placeholder="Locality, Landmark, or Address">
+  </div>` : ''}
   <div class="section-divider"></div>
   <div class="field-row">
     <div class="field"><label>Booking source</label>
@@ -1579,6 +1626,12 @@ Give ONE short, specific, actionable insight (2-3 sentences max) about this book
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  window._setServiceLocation = (loc) => {
+    if (state.serviceLocation === loc) return;
+    state.serviceLocation = loc;
+    render();
+  };
+
   function buildCalendar() {
     const y = state.calYear, m = state.calMonth;
     const firstDay = new Date(y, m, 1).getDay(); // 0=Sun
@@ -1647,18 +1700,54 @@ Give ONE short, specific, actionable insight (2-3 sentences max) about this book
     const currentFullTime = new Date();
     const currentTimeStr = currentFullTime.getHours().toString().padStart(2, '0') + ':' + currentFullTime.getMinutes().toString().padStart(2, '0');
 
+    // Dynamic AI Recommendation based on day and bookings
+    let dynamicAiBest = [];
+    if (state.selectedDate) {
+      const day = state.selectedDate.getDay();
+      const isWeekend = (day === 0 || day === 6);
+      
+      // Target hours for Morning, Afternoon, Evening
+      const targets = isWeekend ? [11, 15, 19] : [10, 14, 18];
+      
+      targets.forEach(targetHour => {
+        let bestSlot = null;
+        let bestScore = -Infinity;
+        for (const t of TIMES) {
+          const count = slotCounts[t] || 0;
+          const isPast = isToday && t < currentTimeStr;
+          if (!isPast && count < 3) {
+            const [h, m] = t.split(':').map(Number);
+            const hourFloat = h + m/60;
+            // Restrict search to roughly the segment surrounding the target hour
+            if (Math.abs(hourFloat - targetHour) <= 3) {
+              const diff = Math.abs(hourFloat - targetHour);
+              const score = -diff - (count * 2); // Penalize distance from target and high bookings
+              if (score > bestScore) {
+                bestScore = score;
+                bestSlot = t;
+              }
+            }
+          }
+        }
+        if (bestSlot) dynamicAiBest.push(bestSlot);
+      });
+      
+      // Remove duplicates if segments overlap
+      dynamicAiBest = [...new Set(dynamicAiBest)];
+    }
+
     function renderGroup(label, icon, slots) {
       return `<div class="time-section-title">${icon} ${label}</div>
     <div class="slot-grid">${slots.map(t => {
         const count = slotCounts[t] || 0;
         const busy = count >= 3; // Maximum 3 clients per slot
         const isPastSlot = isToday && t < currentTimeStr;
-        const best = t === AI_BEST && !busy && !isPastSlot;
+        const best = dynamicAiBest.includes(t);
         const sel = state.selectedTime === t;
         const disabled = busy || isPastSlot;
 
         return `<div class="slot ${disabled ? 'disabled' : best ? 'ai-best' : ''} ${sel && !disabled ? 'selected' : ''}" 
-                     style="${isPastSlot ? 'opacity: 0.4; cursor: not-allowed; border-color: #eee; background: #fafafa;' : ''} ${busy ? 'background: #fdf2f2; color: #9b2c2c; border-color: #feb2b2;' : ''}"
+                     style="${isPastSlot ? 'opacity: 0.6; filter: blur(1.5px); cursor: not-allowed; border-color: #eee; background: #fafafa;' : ''} ${busy ? 'background: #fef2f2; color: #ef4444; border-color: #fca5a5;' : ''}"
                      data-time="${t}">${format12h(t)}${best ? ' ★' : ''}</div>`;
       }).join('')}</div>`;
     }
@@ -1678,14 +1767,14 @@ Give ONE short, specific, actionable insight (2-3 sentences max) about this book
         <div style="display: flex; flex-direction: column; gap: 8px">
           <span style="display: flex; align-items: center; gap: 8px; font-size: 11px"><span class="sl-dot" style="background:var(--color-success)"></span>AI Recommended</span>
           <span style="display: flex; align-items: center; gap: 8px; font-size: 11px"><span class="sl-dot" style="background:var(--color-primary)"></span>Selected</span>
-          <span style="display: flex; align-items: center; gap: 8px; font-size: 11px"><span class="sl-dot" style="background:var(--color-border-primary)"></span>Fully Booked</span>
-          <span style="display: flex; align-items: center; gap: 8px; font-size: 11px"><span class="sl-dot" style="background:#eee; border: 1px solid #ddd;"></span>Past Slots</span>
+          <span style="display: flex; align-items: center; gap: 8px; font-size: 11px"><span class="sl-dot" style="background:#ef4444"></span>Fully Booked</span>
+          <span style="display: flex; align-items: center; gap: 8px; font-size: 11px"><span class="sl-dot" style="background:#eee; border: 1px solid #ddd; filter: blur(0.5px)"></span>Past Slots</span>
         </div>
       </div>
     </div>
     
     <div class="time-slots-area">
-      <div class="card-title" style="margin-bottom: 8px">🕐 ${state.selectedDate ? fmtFull(state.selectedDate) : 'Select a date'}</div>
+      <div class="card-title" style="margin-bottom: 8px">🕐 ${state.selectedDate ? 'Select a time for ' + fmtFull(state.selectedDate) : 'Select a time'}</div>
       <div style="font-size: 12px; color: var(--color-text-secondary); margin-bottom: 16px">Available appointments for this day</div>
       
       <div style="max-height: 400px; overflow-y: auto; padding-right: 10px">
@@ -1999,21 +2088,16 @@ Give ONE short, specific, actionable insight (2-3 sentences max) about this book
   }
 
   function attachEvents() {
-    const cs = document.getElementById('clientSearch');
-    if (cs) {
-      cs.addEventListener('input', e => {
-        state.clientQuery = e.target.value;
-        state.client = null;
-        // Update suggestions without full re-render to avoid losing focus
-        const q = state.clientQuery.toLowerCase();
+    function updateSuggestions(inputEl, queryVal) {
+        const q = queryVal.toLowerCase();
         const matches = q.length > 0 ? CLIENTS.filter(c => c.name.toLowerCase().includes(q) || (c.phone && c.phone.includes(q))).sort((a, b) => a.name.localeCompare(b.name)) : [];
         let sugBox = document.querySelector('.client-suggestion');
         if (matches.length > 0 && !state.client) {
           if (!sugBox) {
             sugBox = document.createElement('div');
             sugBox.className = 'client-suggestion';
-            cs.after(sugBox);
           }
+          inputEl.after(sugBox);
           sugBox.innerHTML = matches.map(c => `
           <div class="cs-item" data-cid="${c.id}">
             <div class="av ${c.av}">${c.name.split(' ').map(x => x[0]).join('')}</div>
@@ -2021,32 +2105,101 @@ Give ONE short, specific, actionable insight (2-3 sentences max) about this book
             <span class="badge badge-blue">Returning</span>
           </div>`).join('');
           sugBox.querySelectorAll('[data-cid]').forEach(el => {
-            el.addEventListener('click', () => { state.client = el.dataset.cid; state.clientQuery = ''; render(); });
+            el.addEventListener('click', () => { 
+              state.client = el.dataset.cid; 
+              state.clientQuery = ''; 
+              state.clientPhone = '';
+              const selClient = CLIENTS.find(c => c.id === state.client);
+              if (selClient) {
+                if (selClient.gender) {
+                  if (selClient.gender !== state.selectedGender) window._setGender(selClient.gender);
+                  else render();
+                } else {
+                  render();
+                  const firstName = selClient.name.trim().split(' ')[0];
+                  fetch(`https://api.genderize.io/?name=${encodeURIComponent(firstName)}`)
+                    .then(r => r.json())
+                    .then(data => {
+                      if (data.gender && (data.gender === 'male' || data.gender === 'female') && data.gender !== state.selectedGender) {
+                        window._setGender(data.gender);
+                      }
+                    }).catch(e => {});
+                }
+              } else {
+                render(); 
+              }
+            });
           });
         } else if (q.length > 0 && matches.length === 0 && !state.client) {
           if (!sugBox) {
             sugBox = document.createElement('div');
             sugBox.className = 'client-suggestion';
-            cs.after(sugBox);
           }
+          inputEl.after(sugBox);
           sugBox.innerHTML = `
             <div class="cs-item" style="cursor:default; opacity:0.8;">
               <div class="av" style="background:#cbd5e1;">?</div>
               <div>
                 <div class="cs-name">No matching clients found</div>
-                <div class="cs-sub">A new profile will be created for "${state.clientQuery}"</div>
+                <div class="cs-sub">A new profile will be created for "${queryVal}"</div>
               </div>
             </div>`;
         } else if (sugBox) {
           sugBox.remove();
         }
+    }
+
+    let genderDebounceTimer;
+    const cs = document.getElementById('clientSearch');
+    if (cs) {
+      cs.addEventListener('input', e => {
+        state.clientQuery = e.target.value;
+        state.client = null;
+        updateSuggestions(cs, state.clientQuery);
+        
+        clearTimeout(genderDebounceTimer);
+        if (state.clientQuery.trim().length > 2) {
+          genderDebounceTimer = setTimeout(async () => {
+             if (state.client) return;
+             const firstName = state.clientQuery.trim().split(' ')[0];
+             try {
+                const res = await fetch(`https://api.genderize.io/?name=${encodeURIComponent(firstName)}`);
+                const data = await res.json();
+                if (data.gender && (data.gender === 'male' || data.gender === 'female') && state.selectedGender !== data.gender) {
+                    state.selectedGender = data.gender;
+                    state.selectedServices = [];
+                    const btns = document.querySelectorAll('.field .btn-gender');
+                    btns.forEach(b => {
+                      const t = b.textContent.toLowerCase();
+                      if (t === 'female' || t === 'male') {
+                        if (t === data.gender) b.classList.add('active');
+                        else b.classList.remove('active');
+                      }
+                    });
+                }
+             } catch(err) {}
+          }, 600);
+        }
       });
     }
+
     const cpi = document.getElementById('clientPhoneInput');
-    if (cpi) cpi.addEventListener('input', e => state.clientPhone = e.target.value);
+    if (cpi) {
+      cpi.addEventListener('input', e => {
+        state.clientPhone = e.target.value;
+        state.client = null;
+        updateSuggestions(cpi, state.clientPhone);
+      });
+    }
     
     const cli = document.getElementById('clientLocationInput');
     if (cli) cli.addEventListener('input', e => state.clientLocation = e.target.value);
+
+    const cdob = document.getElementById('clientDobInput');
+    if (cdob) cdob.addEventListener('input', e => state.clientDob = e.target.value);
+    
+    const cann = document.getElementById('clientAnniversaryInput');
+    if (cann) cann.addEventListener('input', e => state.clientAnniversary = e.target.value);
 
     const ssi = document.getElementById('serviceSearchInput');
     if (ssi) {
@@ -2062,7 +2215,30 @@ Give ONE short, specific, actionable insight (2-3 sentences max) about this book
     }
 
     document.querySelectorAll('[data-cid]').forEach(el => {
-      el.addEventListener('click', () => { state.client = el.dataset.cid; state.clientQuery = ''; state.clientPhone = ''; render(); });
+      el.addEventListener('click', () => { 
+        state.client = el.dataset.cid; 
+        state.clientQuery = ''; 
+        state.clientPhone = ''; 
+        const selClient = CLIENTS.find(c => c.id === state.client);
+        if (selClient) {
+          if (selClient.gender) {
+            if (selClient.gender !== state.selectedGender) window._setGender(selClient.gender);
+            else render();
+          } else {
+            render();
+            const firstName = selClient.name.trim().split(' ')[0];
+            fetch(`https://api.genderize.io/?name=${encodeURIComponent(firstName)}`)
+              .then(r => r.json())
+              .then(data => {
+                if (data.gender && (data.gender === 'male' || data.gender === 'female') && data.gender !== state.selectedGender) {
+                  window._setGender(data.gender);
+                }
+              }).catch(e => {});
+          }
+        } else {
+          render(); 
+        }
+      });
     });
     document.querySelectorAll('[data-calday]').forEach(el => {
       el.addEventListener('click', () => {
@@ -2113,6 +2289,13 @@ Give ONE short, specific, actionable insight (2-3 sentences max) about this book
       if (state.step === 1) {
         if (!state.client && !state.clientQuery.trim()) { state.errors.client = 'Enter or select a client'; render(); return; }
         if (!state.client && !(state.clientPhone || '').trim()) { state.errors.phone = 'Enter a phone number for WhatsApp'; render(); return; }
+        if (!state.client && (state.clientPhone || '').trim()) {
+          const existingByPhone = CLIENTS.find(c => c.phone === state.clientPhone.trim());
+          if (existingByPhone) {
+            state.errors.phone = 'This phone number is already registered. Please select the client from the suggestions below.';
+            render(); return;
+          }
+        }
       }
       if (state.step === 2 && !state.selectedServices.length) { state.errors.services = 'Select at least one service'; render(); return; }
       if (state.step === 3) { if (!state.selectedDate) { state.errors.date = 'Pick a date'; render(); return; } if (!state.selectedTime) { state.errors.time = 'Pick a time'; render(); return; } }

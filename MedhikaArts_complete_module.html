@@ -1820,6 +1820,7 @@
                                     <th>Name</th>
                                     <th>Phone</th>
                                     <th>Email</th>
+                                    <th>Gender</th>
                                     <th>Loyalty Pts</th>
                                     <th>Lifetime Value</th>
                                     <th>Last Service</th>
@@ -3756,7 +3757,7 @@
             }
         }
 
-        const API_URL = (window.location.protocol === 'file:')
+        const API_URL = (window.location.protocol === 'file:' || window.location.port === '5500' || window.location.hostname === '127.0.0.1')
             ? 'http://localhost:5000/api'
             : '/api';
         let cachedBookings = [];
@@ -6116,6 +6117,9 @@
                                 const found = ALL_SERVICES.find(s => s.id === svcId || s.name === svcId);
                                 return found ? found.name : svcId;
                             }).join(', ')}</div>
+                                        <div style="font-size: 11px; font-weight: 600; margin-top: 4px; color: ${item.serviceLocation === 'outdoor' ? '#f59e0b' : '#3b82f6'};">
+                                            ${item.serviceLocation === 'outdoor' ? '🏡 Outdoor' : '🏢 In-Office'}
+                                        </div>
                                     </div>
                                     ${(() => {
                                         let currentStatus = (item.status && item.status.toLowerCase() !== 'upcoming' && item.status.toLowerCase() !== 'confirmed') ? item.status.toLowerCase() : null;
@@ -6540,6 +6544,7 @@
             </td>
             <td>${c.phone || '—'}</td>
             <td>${c.email || '—'}</td>
+            <td style="text-transform: capitalize;">${c.gender || '—'}</td>
             <td style="font-weight:600; color:var(--primary); font-size:15px;">${(c.pts || 0).toLocaleString('en-IN')} <span style="font-size:10px; opacity:0.7;">pts</span></td>
             <td style="font-weight:600;">${c.ltv || '₹0'}</td>
             <td>
@@ -10578,6 +10583,7 @@
                             <td style="padding:12px 16px; color:#64748b; font-size:13px;">${(b.services || []).join(', ')}</td>
                             <td style="padding:12px 16px;">
                                 <span style="background:${statusBg}; color:${statusColor}; padding:4px 8px; border-radius:12px; font-size:12px; font-weight:700;">${b.status || 'Scheduled'}</span>
+                                <div style="font-size:10px; font-weight:600; margin-top:4px; color:${b.serviceLocation === 'outdoor' ? '#f59e0b' : '#3b82f6'};">${b.serviceLocation === 'outdoor' ? '🏡 Outdoor' : '🏢 In-Office'}</div>
                             </td>
                             <td style="padding:12px 16px; text-align:right;">
                                 <button onclick="openBookingForCancel('${b.id}')" style="padding:6px 12px; border-radius:6px; border:1px solid #e2e8f0; background:#fff; color:#ef4444; font-size:12px; font-weight:600; cursor:pointer;">Edit</button>
