@@ -928,14 +928,22 @@ align-items: center;
     }
   }
 
-  async function saveToDB(client, booking) {
+  async function saveToDB(client, booking, isExistingClient) {
     try {
       if (client) {
-        await fetch(`${API_URL}/clients`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(client)
-        });
+        if (isExistingClient) {
+          await fetch(`${API_URL}/clients/${client.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(client)
+          });
+        } else {
+          await fetch(`${API_URL}/clients`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(client)
+          });
+        }
       }
       if (booking) {
         if (state.editId) {
@@ -2111,6 +2119,8 @@ Give ONE short, specific, actionable insight (2-3 sentences max) about this book
               state.clientPhone = '';
               const selClient = CLIENTS.find(c => c.id === state.client);
               if (selClient) {
+                state.clientDob = selClient.dob || '';
+                state.clientAnniversary = selClient.anniversary || '';
                 if (selClient.gender) {
                   if (selClient.gender !== state.selectedGender) window._setGender(selClient.gender);
                   else render();
@@ -2221,6 +2231,8 @@ Give ONE short, specific, actionable insight (2-3 sentences max) about this book
         state.clientPhone = ''; 
         const selClient = CLIENTS.find(c => c.id === state.client);
         if (selClient) {
+          state.clientDob = selClient.dob || '';
+          state.clientAnniversary = selClient.anniversary || '';
           if (selClient.gender) {
             if (selClient.gender !== state.selectedGender) window._setGender(selClient.gender);
             else render();
@@ -2317,7 +2329,7 @@ Give ONE short, specific, actionable insight (2-3 sentences max) about this book
     if (btnConfirm) btnConfirm.addEventListener('click', confirm);
   }
 
-  window._clearClient = () => { state.client = null; state.clientQuery = ''; state.clientPhone = ''; state.clientLocation = ''; render(); };
+  window._clearClient = () => { state.client = null; state.clientQuery = ''; state.clientPhone = ''; state.clientLocation = ''; state.clientDob = ''; state.clientAnniversary = ''; render(); };
   window._hoverService = (id) => { state.highlightedServiceId = id; render(); };
   window._sendWP = sendWhatsApp;
   window._reset = reset;
